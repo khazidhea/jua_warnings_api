@@ -24,3 +24,4 @@ class WarningModel(BaseModel):
     warning_datetime: datetime
     value: float
     coordinates: tuple[float, float]
+    phone_number: str = None

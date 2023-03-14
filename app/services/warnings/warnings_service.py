@@ -28,6 +28,7 @@ def add_warning(warning: WarningModel):
         "lon": {"N": str(warning.coordinates[0])},
         "lat": {"N": str(warning.coordinates[1])},
         "value": {"N": str(warning.value)},
+        "phone_number": {"S": str(warning.phone_number)},
     }
     dynamodb_client.put_item(
         TableName=c.WARNINGS_TABLE,
@@ -175,6 +176,18 @@ def notify_warning(warning: dict, condition_hit: bool, value: float):
         UpdateExpression="set email_body=:email_body",
         ExpressionAttributeValues={":email_body": {"S": email_body}},
     )
+    if warning["phone_number"]:
+        client = boto3.client("sns",)
+        topic_arn = "arn:aws:sns:us-east-1:323677137491:warnings"
+        client.subscribe(
+            TopicArn=topic_arn,
+            Protocol='sms',
+            Endpoint=warning["phone_number"] 
+        )
+        client.publish(
+            Message=email_body,
+            TopicArn=topic_arn
+        )
 
 
 def check_warnings(data_service: DataService, date_range):
