@@ -143,7 +143,9 @@ def check_warning_condition_hit(warning: dict, datamap: dict) -> dict:
     latitudes = datamap[warning["warning_datetime"]][lon_closest].keys()
     latclosest = find_closest_number(lat, latitudes)
 
-    value = datamap[warning["warning_datetime"]][lon_closest][latclosest][warning["parameter"]]
+    value = datamap[warning["warning_datetime"]][lon_closest][latclosest][
+        warning["parameter"]
+    ]
 
     result = False
     op_dict = {
@@ -177,17 +179,14 @@ def notify_warning(warning: dict, condition_hit: bool, value: float):
         ExpressionAttributeValues={":email_body": {"S": email_body}},
     )
     if warning["phone_number"]:
-        client = boto3.client("sns",)
+        client = boto3.client(
+            "sns",
+        )
         topic_arn = "arn:aws:sns:us-east-1:323677137491:warnings"
         client.subscribe(
-            TopicArn=topic_arn,
-            Protocol='sms',
-            Endpoint=warning["phone_number"] 
+            TopicArn=topic_arn, Protocol="sms", Endpoint=warning["phone_number"]
         )
-        client.publish(
-            Message=email_body,
-            TopicArn=topic_arn
-        )
+        client.publish(Message=email_body, TopicArn=topic_arn)
 
 
 def check_warnings(data_service: DataService, date_range):

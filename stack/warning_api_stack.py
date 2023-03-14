@@ -2,13 +2,10 @@
 
 import json
 import pathlib
-import time
 
-from aws_cdk import Duration, Stack, aws_apigateway
-from aws_cdk import aws_certificatemanager as acm
-from aws_cdk import aws_dynamodb
+from aws_cdk import Duration, Stack, aws_apigateway, aws_dynamodb, aws_iam
 from aws_cdk import aws_lambda as lambda_
-from aws_cdk import aws_logs, aws_s3
+from aws_cdk import aws_logs, aws_s3, aws_sns
 from constructs import Construct
 
 from config import GlobalConfig
@@ -63,6 +60,9 @@ class WarningApiStack(Stack):
             table_name=conf.WARNINGS_TABLE,
         )
 
+        sns_topic = aws_sns.Topic.from_topic_arn(
+            self, f"{conf.full_name}-sns", topic_arn=conf.SNS_TOPIC
+        )
         app_root_path = "/" if conf.is_prod or conf.is_stage else "/dev"
         base_lambda = lambda_.DockerImageFunction(
             self,
@@ -84,7 +84,26 @@ class WarningApiStack(Stack):
         # Add permissions for lambda
         bucket.grant_read(base_lambda)
         forecast_table.grant_read_data(base_lambda)
-        warning_table.grant_read_data(base_lambda)
+        warning_table.grant_read_write_data(base_lambda)
+
+        policy_statement = aws_iam.PolicyStatement(
+            effect=aws_iam.Effect.ALLOW,
+            actions=["dynamodb:Query"],
+            resources=[
+                "arn:aws:dynamodb:us-east-1:323677137491:table/warnings-table/index/warning_datetime-index"
+            ],
+        )
+        base_lambda.add_to_role_policy(policy_statement)
+
+        sns_topic.grant_publish(base_lambda)
+
+        base_lambda.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                effect=aws_iam.Effect.ALLOW,
+                resources=[sns_topic.topic_arn],
+                actions=["sns:Publish", "SNS:Subscribe"],
+            )
+        )
 
         # Access logs, including API key
         access_log_group = aws_logs.LogGroup(self, f"{conf.full_name}-access-log")

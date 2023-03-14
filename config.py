@@ -18,7 +18,10 @@ class GlobalConfig(BaseSettings):
         "forecast-releases-prod", env="DYNAMODB_FORECAST_TABLE"
     )
 
-    WARNINGS_TABLE: str = Field(f"warnings-table", env="WARNINGS_TABLE")
+    WARNINGS_TABLE: str = Field("warnings-table", env="WARNINGS_TABLE")
+    SNS_TOPIC: str = Field(
+        "arn:aws:sns:us-east-1:323677137491:warnings", env="SNS_TOPIC"
+    )
 
     @property
     def full_name(self) -> str:
