@@ -57,6 +57,12 @@ class WarningApiStack(Stack):
             table_name="forecast-releases-prod",
         )
 
+        warning_table = aws_dynamodb.Table.from_table_name(
+            self,
+            f"{conf.full_name}-warning-table",
+            table_name=conf.WARNINGS_TABLE,
+        )
+
         app_root_path = "/" if conf.is_prod or conf.is_stage else "/dev"
         base_lambda = lambda_.DockerImageFunction(
             self,
@@ -78,6 +84,7 @@ class WarningApiStack(Stack):
         # Add permissions for lambda
         bucket.grant_read(base_lambda)
         forecast_table.grant_read_data(base_lambda)
+        warning_table.grant_read_data(base_lambda)
 
         # Access logs, including API key
         access_log_group = aws_logs.LogGroup(self, f"{conf.full_name}-access-log")
