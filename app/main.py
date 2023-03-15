@@ -115,9 +115,6 @@ def overridden_openapi() -> dict[str, Any]:
     )
 
 
-load_latest_dataset(app)
-print("hello")
-
 if __name__ == "__main__":
     # Run locally with automatic reloading
     import uvicorn
