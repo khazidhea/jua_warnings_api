@@ -1,19 +1,23 @@
+"""Module service working with warnings."""
+
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import boto3
+from botocore.exceptions import ClientError
 from dateutil import parser
 
 from app.services.data_zarr.data_service import DataService
 from app.services.warnings.warning import Condition, WarningModel
 from config import get_config
-from botocore.exceptions import ClientError
 
 c = get_config()
 
 
 def add_warning(warning: WarningModel):
+    """create warning item"""
+
     dynamodb_client = boto3.client("dynamodb")
     new_date = warning.warning_datetime.replace(minute=0, second=0, microsecond=0)
     new_date = new_date.replace(tzinfo=timezone.utc)
@@ -38,6 +42,8 @@ def add_warning(warning: WarningModel):
 
 
 def get_warnings():
+    """get warnings list"""
+
     dynamodb = boto3.resource("dynamodb")
     table = dynamodb.Table(c.WARNINGS_TABLE)
     response = table.scan()
@@ -45,6 +51,8 @@ def get_warnings():
 
 
 def delete_all():
+    """delete all warnings"""
+
     dynamodb = boto3.resource("dynamodb")
     table = dynamodb.Table(c.WARNINGS_TABLE)
     response = table.scan()
@@ -58,7 +66,8 @@ def delete_all():
             )
 
 
-def get_before_hours_warnings(hours=[48, 12, 6]):
+def get_before_hours_warnings(hours: list[int]):
+    """get warnings with date before hours"""
 
     dynamodb = boto3.resource("dynamodb")
     table = dynamodb.Table(c.WARNINGS_TABLE)
@@ -109,21 +118,23 @@ def get_data_as_map(data_service: DataService, date_range, parameters, coordinat
     for item in features:
         coords = item["geometry"]["coordinates"]
         properties = item["properties"]
-        dt = properties["DATETIME"]
-        dt = parser.parse(dt).replace(tzinfo=timezone.utc)
+        warning_datetime = properties["DATETIME"]
+        warning_datetime = parser.parse(warning_datetime).replace(tzinfo=timezone.utc)
 
-        if str(dt) not in datamap:
-            datamap[str(dt)] = {}
+        if str(warning_datetime) not in datamap:
+            datamap[str(warning_datetime)] = {}
 
-        if coords[0] not in datamap[str(dt)]:
-            datamap[str(dt)][coords[0]] = {}
+        if coords[0] not in datamap[str(warning_datetime)]:
+            datamap[str(warning_datetime)][coords[0]] = {}
 
-        datamap[str(dt)][coords[0]][coords[1]] = properties
+        datamap[str(warning_datetime)][coords[0]][coords[1]] = properties
 
     return datamap
 
 
 def find_closest_number(value: float, values: list[float]) -> Optional[float]:
+    """get closest to value number from values"""
+
     closest_value = None
     closest_distance = float("inf")
     for num in values:
@@ -135,6 +146,8 @@ def find_closest_number(value: float, values: list[float]) -> Optional[float]:
 
 
 def check_warning_condition_hit(warning: dict, datamap: dict) -> dict:
+    """check whether zarr data matches with warning condition"""
+
     check_value = float(warning["value"])
     lon = float(warning["lon"])
     lat = float(warning["lat"])
@@ -161,59 +174,51 @@ def check_warning_condition_hit(warning: dict, datamap: dict) -> dict:
     return {"hit": result, "value": value}
 
 
-def update_warning_field(id: str, field: str, type: str, value: str):
+def update_warning_field(item_id: str, field: str, field_type: str, value: str):
+    """update warning item field"""
+
     dynamodb = boto3.resource("dynamodb")
     table = dynamodb.Table(c.WARNINGS_TABLE)
 
     table.update_item(
-        Key={"id": id},
+        Key={"id": item_id},
         UpdateExpression=f"set {field}=:value",
-        ExpressionAttributeValues={":value": {type: str(value)}},
+        ExpressionAttributeValues={":value": {field_type: str(value)}},
     )
+
 
 def send_sms(number: str, text: str) -> bool:
+    """send sms"""
+
     client = boto3.client("sns")
     topic_arn = "arn:aws:sns:us-east-1:323677137491:warnings"
-    client.subscribe(
-        TopicArn=topic_arn, Protocol="sms", Endpoint=number
-    )
+    client.subscribe(TopicArn=topic_arn, Protocol="sms", Endpoint=number)
     response = client.publish(Message=text, TopicArn=topic_arn)
-    return response['ResponseMetadata']['HTTPStatusCode'] == 200
+    return response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
 
-def send_email(recipient: str,  body: str) -> bool:
-    ses = boto3.client('ses', region_name='us-east-1')
+def send_email(recipient: str, body: str) -> bool:
+    """send email"""
 
-    sender = 'no-reply@jua.ai'
-    subject = 'Jua warning'
+    ses = boto3.client("ses", region_name="us-east-1")
 
-    # Create the email message
-    message = {
-        'Subject': {
-            'Data': subject
-        },
-        'Body': {
-            'Text': {
-                'Data': body
-            }
-        }
-    }
+    sender = "no-reply@jua.ai"
+    subject = "Jua warning"
+
+    message = {"Subject": {"Data": subject}, "Body": {"Text": {"Data": body}}}
 
     try:
         response = ses.send_email(
-            Source=sender,
-            Destination={
-                'ToAddresses': [recipient]
-            },
-            Message=message
+            Source=sender, Destination={"ToAddresses": [recipient]}, Message=message
         )
-        return response['ResponseMetadata']['HTTPStatusCode'] == 200
-    except ClientError as e:
+        return response["ResponseMetadata"]["HTTPStatusCode"] == 200
+    except ClientError:
         return False
 
 
 def notify_warning(warning: dict, condition_hit: bool, value: float):
-    
+    """send email"""
+
     email_body = f"""
 Warning: "{warning["name"]}"
 Condition: {warning["condition"]}
@@ -224,38 +229,24 @@ Real value: {value}
     """
 
     update_warning_field(
-        id=warning["id"],
-        field="email_body",
-        type="S",
-        value=email_body
+        item_id=warning["id"], field="email_body", field_type="S", value=email_body
     )
 
-    sms_sent = send_sms(
-        number=warning["phone_number"],
-        text=email_body
-    )
+    sms_sent = send_sms(number=warning["phone_number"], text=email_body)
 
-    email_sent = send_email(
-        recipient=warning["email"],
-        body=email_body
-    )
+    email_sent = send_email(recipient=warning["email"], body=email_body)
 
     update_warning_field(
-        id=warning["id"],
-        field="sms_sent",
-        type="S",
-        value=sms_sent
+        item_id=warning["id"], field="sms_sent", field_type="S", value=str(sms_sent)
     )
     update_warning_field(
-        id=warning["id"],
-        field="email_sent",
-        type="S",
-        value=email_sent
+        item_id=warning["id"], field="email_sent", field_type="S", value=str(email_sent)
     )
-    
 
 
 def check_warnings(data_service: DataService, date_range):
+    """load warnings to check condition and notify users"""
+
     warnings = get_before_hours_warnings([48, 12, 6])
     coordinates = [
         (float(warning["lon"]), float(warning["lat"])) for warning in warnings
