@@ -8,6 +8,7 @@ from dateutil import parser
 from app.services.data_zarr.data_service import DataService
 from app.services.warnings.warning import Condition, WarningModel
 from config import get_config
+from botocore.exceptions import ClientError
 
 c = get_config()
 
@@ -160,33 +161,98 @@ def check_warning_condition_hit(warning: dict, datamap: dict) -> dict:
     return {"hit": result, "value": value}
 
 
-def notify_warning(warning: dict, condition_hit: bool, value: float):
+def update_warning_field(id: str, field: str, type: str, value: str):
     dynamodb = boto3.resource("dynamodb")
     table = dynamodb.Table(c.WARNINGS_TABLE)
-    email_body = f"""
-        Warning: "{warning["name"]}" 
-        condition: {warning["condition"]}
-        parameter: {warning["parameter"]}
-        value:  {warning["value"]}
-        result: {condition_hit}
-        real value: {value}
-
-    """
 
     table.update_item(
-        Key={"id": warning["id"]},
-        UpdateExpression="set email_body=:email_body",
-        ExpressionAttributeValues={":email_body": {"S": email_body}},
+        Key={"id": id},
+        UpdateExpression=f"set {field}=:value",
+        ExpressionAttributeValues={":value": {type: str(value)}},
     )
-    if warning["phone_number"]:
-        client = boto3.client(
-            "sns",
+
+def send_sms(number: str, text: str) -> bool:
+    client = boto3.client("sns")
+    topic_arn = "arn:aws:sns:us-east-1:323677137491:warnings"
+    client.subscribe(
+        TopicArn=topic_arn, Protocol="sms", Endpoint=number
+    )
+    response = client.publish(Message=text, TopicArn=topic_arn)
+    return response['ResponseMetadata']['HTTPStatusCode'] == 200
+
+
+def send_email(recipient: str,  body: str) -> bool:
+    ses = boto3.client('ses', region_name='us-east-1')
+
+    sender = 'no-reply@jua.ai'
+    subject = 'Jua warning'
+
+    # Create the email message
+    message = {
+        'Subject': {
+            'Data': subject
+        },
+        'Body': {
+            'Text': {
+                'Data': body
+            }
+        }
+    }
+
+    try:
+        response = ses.send_email(
+            Source=sender,
+            Destination={
+                'ToAddresses': [recipient]
+            },
+            Message=message
         )
-        topic_arn = "arn:aws:sns:us-east-1:323677137491:warnings"
-        client.subscribe(
-            TopicArn=topic_arn, Protocol="sms", Endpoint=warning["phone_number"]
-        )
-        client.publish(Message=email_body, TopicArn=topic_arn)
+        return response['ResponseMetadata']['HTTPStatusCode'] == 200
+    except ClientError as e:
+        return False
+
+
+def notify_warning(warning: dict, condition_hit: bool, value: float):
+    
+    email_body = f"""
+Warning: "{warning["name"]}"
+Condition: {warning["condition"]}
+Parameter: {warning["parameter"]}
+Value:  {warning["value"]}
+Result: {condition_hit}
+Real value: {value}
+    """
+
+    update_warning_field(
+        id=warning["id"],
+        field="email_body",
+        type="S",
+        value=email_body
+    )
+
+    sms_sent = send_sms(
+        number=warning["phone_number"],
+        text=email_body
+    )
+
+    email_sent = send_email(
+        recipient=warning["email"],
+        body=email_body
+    )
+
+    update_warning_field(
+        id=warning["id"],
+        field="sms_sent",
+        type="S",
+        value=sms_sent
+    )
+    update_warning_field(
+        id=warning["id"],
+        field="email_sent",
+        type="S",
+        value=email_sent
+    )
+    
 
 
 def check_warnings(data_service: DataService, date_range):
