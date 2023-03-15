@@ -87,6 +87,7 @@ addopts = "--cov-report=html --cov-report=term-missing --cov=app --ignore=cdk.ou
 warn_unused_configs = true
 exclude = [
     "cdk.out",
+    ".venv",
 ]
 
 [[tool.mypy.overrides]]
