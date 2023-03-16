@@ -183,7 +183,7 @@ def update_warning_field(item_id: str, field: str, field_type: str, value: str):
     table.update_item(
         Key={"id": item_id},
         UpdateExpression=f"set {field}=:value",
-        ExpressionAttributeValues={":value": {field_type: str(value)}},
+        ExpressionAttributeValues={":value": str(value)},
     )
 
 
