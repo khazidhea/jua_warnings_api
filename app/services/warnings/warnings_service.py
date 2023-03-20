@@ -191,9 +191,7 @@ def send_sms(number: str, text: str) -> bool:
     """send sms"""
 
     client = boto3.client("sns")
-    topic_arn = "arn:aws:sns:us-east-1:323677137491:warnings"
-    client.subscribe(TopicArn=topic_arn, Protocol="sms", Endpoint=number)
-    response = client.publish(Message=text, TopicArn=topic_arn)
+    response = client.publish(Message=text, PhoneNumber=number)
     return response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
 
