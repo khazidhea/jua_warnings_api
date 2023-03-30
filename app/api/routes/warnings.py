@@ -1,15 +1,11 @@
 """Warnings API routes"""
 
-import boto3
-from fastapi import Body, Depends, Query, Request
+from fastapi import Body, Query
 from fastapi.routing import APIRouter
 from starlette.status import HTTP_200_OK
 
-from app.api.routes.schemas import Parameter, ParameterDetails, ParameterDetailsResponse
-from app.services.data_zarr.data_service import DataService, get_data_service
-from app.services.data_zarr.params import UnitSystem
-from app.services.warnings import warnings_service
-from app.services.warnings.warning import WarningModel
+from app.services.warnings import forcast_service, warnings_service
+from app.services.warnings.models import UnitSystem, WarningModel
 
 router = APIRouter(prefix="/warnings", tags=["warnings"])
 
@@ -17,7 +13,6 @@ router = APIRouter(prefix="/warnings", tags=["warnings"])
 @router.get(
     "/parameters",
     status_code=HTTP_200_OK,
-    response_model=ParameterDetailsResponse | dict[Parameter, ParameterDetails],
     summary="Get metadata on all available forecast parameters",
     operation_id="data_get_parameters",
 )
@@ -27,11 +22,10 @@ def get_parameters(
         default=UnitSystem.DEFAULT,
         example=UnitSystem.DEFAULT,
     ),
-    data_service: DataService = Depends(get_data_service),
 ) -> dict:
     """Get parameters route"""
 
-    return data_service.get_parameters(units)
+    return forcast_service.get_parameters(units)
 
 
 @router.get(
@@ -62,6 +56,7 @@ def add_warning(payload: WarningModel = Body(...)):
 )
 def delete_warnings():
     """Delete warnings route"""
+
     return warnings_service.delete_all()
 
 
@@ -70,10 +65,7 @@ def delete_warnings():
     status_code=HTTP_200_OK,
     summary="Check warnings",
 )
-def check_warning(
-    request: Request, data_service: DataService = Depends(get_data_service)
-):
-    return warnings_service.check_warnings(
-        data_service=data_service,
-        date_range=(request.app.state.FROM_DATE, request.app.state.TO_DATE),
-    )
+def check_warning():
+    """Check warnings route"""
+
+    return warnings_service.check_warnings()

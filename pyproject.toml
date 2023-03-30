@@ -23,6 +23,8 @@ aiobotocore = {extras = ["boto3"], version = "^2.4.2"}
 mypy = "^1.0.0"
 boto3-stubs = "^1.26.68"
 types-python-dateutil = "^2.8.19.6"
+requests = "^2.28.2"
+types-requests = "^2.28.11.17"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable
 
 import sentry_sdk
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
@@ -13,10 +13,8 @@ from fastapi_utils.timing import add_timing_middleware
 from starlette.responses import RedirectResponse
 from starlette.status import HTTP_301_MOVED_PERMANENTLY
 
-from app.api.routes import documentation, forecast, warnings
+from app.api.routes import documentation, warnings
 from app.api.routes.documentation import API_METADATA
-from app.services.authentication import get_api_key
-from app.services.data_zarr.data_service import load_latest_dataset
 from config import get_config
 
 c = get_config()
@@ -85,11 +83,6 @@ def index() -> Response:
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-app.include_router(
-    forecast.router,
-    prefix=V1_PREFIX
-    # forecast.router, prefix=V1_PREFIX, dependencies=[Depends(get_api_key)]
-)
 app.include_router(warnings.router, prefix=V1_PREFIX)
 app.include_router(documentation.router)
 
@@ -118,7 +111,5 @@ def overridden_openapi() -> dict[str, Any]:
 if __name__ == "__main__":
     # Run locally with automatic reloading
     import uvicorn
-
-    load_latest_dataset(app)
 
     uvicorn.run("app.main:app", port=8000, reload=True, access_log=False)

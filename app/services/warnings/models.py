@@ -4,6 +4,13 @@ from enum import Enum
 from pydantic import BaseModel
 
 
+class UnitSystem(Enum):
+    """A system of units"""
+
+    SI = "SI"
+    DEFAULT = "DEFAULT"
+
+
 class Condition(Enum):
     """A warning condition"""
 

@@ -268,18 +268,18 @@ tests-no-zope = ["cloudpickle", "cloudpickle", "hypothesis", "hypothesis", "mypy
 
 [[package]]
 name = "aws-cdk-asset-awscli-v1"
-version = "2.2.52"
+version = "2.2.106"
 description = "A library that contains the AWS CLI for use in Lambda Layers"
 category = "main"
 optional = false
 python-versions = "~=3.7"
 files = [
-    {file = "aws-cdk.asset-awscli-v1-2.2.52.tar.gz", hash = "sha256:ab04beec8e267e363931df2caf48a24100cb5799d7fd8db51efe881d117efa7a"},
-    {file = "aws_cdk.asset_awscli_v1-2.2.52-py3-none-any.whl", hash = "sha256:6e9d686bb0b00242e869e91d57b65b619ffb42e99abe482436e3a6692485dbfe"},
+    {file = "aws-cdk.asset-awscli-v1-2.2.106.tar.gz", hash = "sha256:0feaa918df0e76d9d4b93ad1b4cbb1b91a5e65d0703db3585e08e538b04c9ca7"},
+    {file = "aws_cdk.asset_awscli_v1-2.2.106-py3-none-any.whl", hash = "sha256:9e5fce27d18bc9f3e953bbd059a4f7b2d41d45efe21059ada553f33551e166cb"},
 ]
 
 [package.dependencies]
-jsii = ">=1.73.0,<2.0.0"
+jsii = ">=1.77.0,<2.0.0"
 publication = ">=0.0.3"
 typeguard = ">=2.13.3,<2.14.0"
 
@@ -302,39 +302,39 @@ typeguard = ">=2.13.3,<2.14.0"
 
 [[package]]
 name = "aws-cdk-asset-node-proxy-agent-v5"
-version = "2.0.42"
+version = "2.0.85"
 description = "@aws-cdk/asset-node-proxy-agent-v5"
 category = "main"
 optional = false
 python-versions = "~=3.7"
 files = [
-    {file = "aws-cdk.asset-node-proxy-agent-v5-2.0.42.tar.gz", hash = "sha256:ae1b615be42e78681e05b145460603f171c06b671a2d1caa060a159b94b06366"},
-    {file = "aws_cdk.asset_node_proxy_agent_v5-2.0.42-py3-none-any.whl", hash = "sha256:6e0174802097d558daa1be5c4e6e7f309eeba626392955e596bf967ee37865d3"},
+    {file = "aws-cdk.asset-node-proxy-agent-v5-2.0.85.tar.gz", hash = "sha256:b0ab6502cc6c899a653a120c560b6257f7bcaf9814ad9f35a692dec8766f3124"},
+    {file = "aws_cdk.asset_node_proxy_agent_v5-2.0.85-py3-none-any.whl", hash = "sha256:a9a05a7e2001d505e6d31de42fd5ab1bb2e01a6c45ee868c7ed32e1d2487b558"},
 ]
 
 [package.dependencies]
-jsii = ">=1.73.0,<2.0.0"
+jsii = ">=1.77.0,<2.0.0"
 publication = ">=0.0.3"
 typeguard = ">=2.13.3,<2.14.0"
 
 [[package]]
 name = "aws-cdk-lib"
-version = "2.62.2"
+version = "2.69.0"
 description = "Version 2 of the AWS Cloud Development Kit library"
 category = "main"
 optional = false
 python-versions = "~=3.7"
 files = [
-    {file = "aws-cdk-lib-2.62.2.tar.gz", hash = "sha256:f85000438d849a0522ffcd8e7cb5a70be5fa34339082d4d569734169c6d37b4d"},
-    {file = "aws_cdk_lib-2.62.2-py3-none-any.whl", hash = "sha256:03dfb8303b00333177b18e3b60c95d738adf4d90086a5b1e707e896fdc234d52"},
+    {file = "aws-cdk-lib-2.69.0.tar.gz", hash = "sha256:61e9e1e98aa3bb7cf2bd1014990331755ba47d84ce76d41fe97f916cb53f8c39"},
+    {file = "aws_cdk_lib-2.69.0-py3-none-any.whl", hash = "sha256:462fba45abd15edae5a8264f5b12f6c6194421fbba2b8bc84a91299efad234d7"},
 ]
 
 [package.dependencies]
-"aws-cdk.asset-awscli-v1" = ">=2.2.49,<3.0.0"
+"aws-cdk.asset-awscli-v1" = ">=2.2.97,<3.0.0"
 "aws-cdk.asset-kubectl-v20" = ">=2.1.1,<3.0.0"
-"aws-cdk.asset-node-proxy-agent-v5" = ">=2.0.38,<3.0.0"
+"aws-cdk.asset-node-proxy-agent-v5" = ">=2.0.77,<3.0.0"
 constructs = ">=10.0.0,<11.0.0"
-jsii = ">=1.73.0,<2.0.0"
+jsii = ">=1.77.0,<2.0.0"
 publication = ">=0.0.3"
 typeguard = ">=2.13.3,<2.14.0"
 
@@ -1611,6 +1611,22 @@ files = [
 ]
 
 [[package]]
+name = "importlib-resources"
+version = "5.12.0"
+description = "Read resources from Python packages"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "importlib_resources-5.12.0-py3-none-any.whl", hash = "sha256:7b1deeebbf351c7578e09bf2f63fa2ce8b5ffec296e0d349139d43cca061a81a"},
+    {file = "importlib_resources-5.12.0.tar.gz", hash = "sha256:4be82589bf5c1d7999aedf2a45159d10cb3ca4f19b2271f8792bc8e6da7b22f6"},
+]
+
+[package.extras]
+docs = ["furo", "jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
+testing = ["flake8 (<5)", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)"]
+
+[[package]]
 name = "iniconfig"
 version = "2.0.0"
 description = "brain-dead simple config-ini parsing"
@@ -1672,19 +1688,20 @@ files = [
 
 [[package]]
 name = "jsii"
-version = "1.74.0"
+version = "1.77.0"
 description = "Python client for jsii runtime"
 category = "main"
 optional = false
 python-versions = "~=3.7"
 files = [
-    {file = "jsii-1.74.0-py3-none-any.whl", hash = "sha256:ee76781fe66106c367fbb3bb383db4f5e9b8ff3d3c4c0f34624c050211f040be"},
-    {file = "jsii-1.74.0.tar.gz", hash = "sha256:575131396ad34f8f6e9f2604953ecbf4f3368625656a828b13089e4abb81b443"},
+    {file = "jsii-1.77.0-py3-none-any.whl", hash = "sha256:553e04a20b8fb9927d93d8b5e96f984f514c5acc4b06bd63b4e7130228d0c7fc"},
+    {file = "jsii-1.77.0.tar.gz", hash = "sha256:28f070f3bce79e9c2d822607a960fe927e5179cf99416c94c39fb41581250854"},
 ]
 
 [package.dependencies]
 attrs = ">=21.2,<23.0"
 cattrs = ">=1.8,<22.3"
+importlib-resources = ">=5.2.0"
 publication = ">=0.0.3"
 python-dateutil = "*"
 typeguard = ">=2.13.3,<2.14.0"
@@ -3184,6 +3201,21 @@ files = [
 ]
 
 [[package]]
+name = "types-requests"
+version = "2.28.11.17"
+description = "Typing stubs for requests"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-requests-2.28.11.17.tar.gz", hash = "sha256:0d580652ce903f643f8c3b494dd01d29367ea57cea0c7ad7f65cf3169092edb0"},
+    {file = "types_requests-2.28.11.17-py3-none-any.whl", hash = "sha256:cc1aba862575019306b2ed134eb1ea994cab1c887a22e18d3383e6dd42e9789b"},
+]
+
+[package.dependencies]
+types-urllib3 = "<1.27"
+
+[[package]]
 name = "types-s3transfer"
 version = "0.6.0.post5"
 description = "Type annotations and code completion for s3transfer"
@@ -3197,6 +3229,18 @@ files = [
 
 [package.dependencies]
 types-awscrt = "*"
+
+[[package]]
+name = "types-urllib3"
+version = "1.26.25.10"
+description = "Typing stubs for urllib3"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-urllib3-1.26.25.10.tar.gz", hash = "sha256:c44881cde9fc8256d05ad6b21f50c4681eb20092552351570ab0a8a0653286d6"},
+    {file = "types_urllib3-1.26.25.10-py3-none-any.whl", hash = "sha256:12c744609d588340a07e45d333bf870069fc8793bcf96bae7a96d4712a42591d"},
+]
 
 [[package]]
 name = "typing-extensions"
@@ -3652,4 +3696,4 @@ jupyter = ["ipytree (>=0.2.2)", "ipywidgets (>=8.0.0)", "notebook"]
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.10"
-content-hash = "491717699833effaef216ebc26d1f1cf7c4939411c4194be874dd73ae3e9a724"
+content-hash = "060e2fbd476fad2d268f6657f54ad0408f01b4366f7821e8ca5f06da6de5b0a1"

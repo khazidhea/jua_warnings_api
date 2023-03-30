@@ -14,13 +14,10 @@ class GlobalConfig(BaseSettings):
     SENTRY_DSN: str = Field("", env="SENTRY_DSN")
     LOG_LEVEL: str = Field("INFO", env="LOG_LEVEL")
 
-    DYNAMODB_FORECAST_TABLE: str = Field(
-        "forecast-releases-prod", env="DYNAMODB_FORECAST_TABLE"
-    )
-
     WARNINGS_TABLE: str = Field("warnings-table", env="WARNINGS_TABLE")
-    SNS_TOPIC: str = Field(
-        "arn:aws:sns:us-east-1:323677137491:warnings", env="SNS_TOPIC"
+    FORFACT_API_URL: str = Field("https://api.jua.ai/", env="FORFACT_API_URL")
+    FORFACT_API_KEY: str = Field(
+        "WVKfcSO0DC8n78tJkF3DoBJP2NmPtoD529cciSlj", env="FORFACT_API_KEY"
     )
 
     @property
