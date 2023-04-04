@@ -5,7 +5,7 @@ import pathlib
 
 from aws_cdk import Duration, Stack, aws_apigateway, aws_dynamodb, aws_iam
 from aws_cdk import aws_lambda as lambda_
-from aws_cdk import aws_logs, aws_s3
+from aws_cdk import aws_logs
 from constructs import Construct
 
 from config import GlobalConfig
@@ -42,11 +42,6 @@ class WarningApiStack(Stack):
 
         super().__init__(scope, conf.full_name, **kwargs)
 
-        # One bronze bucket for all stages
-        bucket = aws_s3.Bucket.from_bucket_arn(
-            self, "BucketByArn", "arn:aws:s3:::bronze-data-platform-prod"
-        )
-
         warning_table = aws_dynamodb.Table.from_table_name(
             self,
             f"{conf.full_name}-warning-table",
@@ -71,7 +66,18 @@ class WarningApiStack(Stack):
         )
 
         # Add permissions for lambda
-        bucket.grant_read(base_lambda)
+        sns_publish_policy = aws_iam.PolicyStatement(
+            actions=["sns:Publish"],
+            resources=["*"]
+        )
+        base_lambda.add_to_role_policy(sns_publish_policy)
+
+        ses_publish_policy = aws_iam.PolicyStatement(
+            actions=["ses:SendEmail"],
+            resources=["*"]
+        )
+        base_lambda.add_to_role_policy(ses_publish_policy)
+
         warning_table.grant_read_write_data(base_lambda)
 
         policy_statement = aws_iam.PolicyStatement(

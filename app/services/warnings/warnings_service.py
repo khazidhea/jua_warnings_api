@@ -121,13 +121,11 @@ def send_email(recipient: str, body: str) -> bool:
 
     message = {"Subject": {"Data": subject}, "Body": {"Text": {"Data": body}}}
 
-    try:
-        response = ses.send_email(
-            Source=sender, Destination={"ToAddresses": [recipient]}, Message=message
-        )
-        return response["ResponseMetadata"]["HTTPStatusCode"] == 200
-    except ClientError:
-        return False
+    response = ses.send_email(
+        Source=sender, Destination={"ToAddresses": [recipient]}, Message=message
+    )
+    print("test", response)
+    return response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
 
 def notify_warning(warning: dict, condition_result: bool, value: float):

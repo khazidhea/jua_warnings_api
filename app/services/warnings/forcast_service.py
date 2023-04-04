@@ -16,7 +16,7 @@ def get_parameters(units: UnitSystem):
     """get parameter list"""
 
     url = f"{c.FORFACT_API_URL}v1/forecast/parameters"
-    params = {"units": units.value}
+    params = {"units": units.value.lower()}
     headers = {"x-api-key": c.FORFACT_API_KEY}
     response = requests.get(url, params=params, headers=headers)
     return response.json()
