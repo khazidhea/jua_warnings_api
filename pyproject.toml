@@ -25,6 +25,7 @@ boto3-stubs = "^1.26.68"
 types-python-dateutil = "^2.8.19.6"
 requests = "^2.28.2"
 types-requests = "^2.28.11.17"
+fastapi-cognito = "^2.3.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
@@ -42,6 +43,7 @@ commitizen = "^2.37.0"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = {extras = ["standard"], version = "^0.20.0"}
+autopep8 = "^2.0.2"
 
 [build-system]
 requires = ["poetry-core"]

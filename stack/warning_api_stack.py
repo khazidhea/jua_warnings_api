@@ -3,9 +3,12 @@
 import json
 import pathlib
 
-from aws_cdk import Duration, Stack, aws_apigateway, aws_dynamodb, aws_iam
+from aws_cdk import Duration, Stack, aws_apigateway
+from aws_cdk import aws_cognito as cognito
+from aws_cdk import aws_dynamodb, aws_iam
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_logs
+from aws_cdk import aws_secretsmanager as secrets_manager
 from constructs import Construct
 
 from config import GlobalConfig
@@ -42,6 +45,60 @@ class WarningApiStack(Stack):
 
         super().__init__(scope, conf.full_name, **kwargs)
 
+        user_pool = cognito.UserPool(
+            self,
+            f"{conf.full_name}UserPool",
+            user_pool_name=f"{conf.full_name}-user-pool",
+            auto_verify=cognito.AutoVerifiedAttrs(email=True),
+            sign_in_aliases=cognito.SignInAliases(
+                email=True,
+            ),
+            # standard_attributes=cognito.StandardAttributes(
+            #     nickname=cognito.StandardAttribute(
+            #         required=True,
+            #         mutable=False
+            #     ),
+            # ),
+            account_recovery=cognito.AccountRecovery.EMAIL_ONLY,
+            mfa=cognito.Mfa.OFF,
+            self_sign_up_enabled=True,
+        )
+        # GOOGLE_CLIENT_ID
+
+        # Enable self-registration with email confirm and required attributes
+        user_pool_client = user_pool.add_client(
+            f"{conf.full_name}userPoolClient",
+            generate_secret=True,
+            prevent_user_existence_errors=True,
+            supported_identity_providers=[
+                cognito.UserPoolClientIdentityProvider.COGNITO,
+                cognito.UserPoolClientIdentityProvider.GOOGLE,
+            ],
+            user_pool_client_name=f"{conf.full_name}-user-pool-client",
+            auth_flows=cognito.AuthFlow(user_password=True),
+            o_auth=cognito.OAuthSettings(
+                flows=cognito.OAuthFlows(
+                    authorization_code_grant=True, implicit_code_grant=True
+                ),
+                scopes=[
+                    cognito.OAuthScope.EMAIL,
+                    cognito.OAuthScope.OPENID,
+                    cognito.OAuthScope.PROFILE,
+                ],
+                callback_urls=["http://localhost/login"],
+                logout_urls=["http://localhost/logout"],
+            ),
+        )
+        google_provider = cognito.UserPoolIdentityProviderGoogle(
+            self,
+            "Google",
+            client_id=conf.GOOGLE_CLIENT_ID,
+            client_secret=conf.GOOGLE_SECRET,
+            user_pool=user_pool,
+            scopes=["email", "profile", "openid"],
+        )
+        user_pool_client.node.add_dependency(google_provider)
+
         warning_table = aws_dynamodb.Table.from_table_name(
             self,
             f"{conf.full_name}-warning-table",
@@ -67,14 +124,12 @@ class WarningApiStack(Stack):
 
         # Add permissions for lambda
         sns_publish_policy = aws_iam.PolicyStatement(
-            actions=["sns:Publish"],
-            resources=["*"]
+            actions=["sns:Publish"], resources=["*"]
         )
         base_lambda.add_to_role_policy(sns_publish_policy)
 
         ses_publish_policy = aws_iam.PolicyStatement(
-            actions=["ses:SendEmail"],
-            resources=["*"]
+            actions=["ses:SendEmail"], resources=["*"]
         )
         base_lambda.add_to_role_policy(ses_publish_policy)
 

@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import boto3
-from botocore.exceptions import ClientError
 
 from app.services.warnings.forcast_service import get_forcast_data
 from app.services.warnings.models import Condition, WarningModel
@@ -14,15 +13,17 @@ from config import get_config
 c = get_config()
 
 
-def add_warning(warning: WarningModel):
+def add_warning(warning: WarningModel, user_id: str):
     """create warning item"""
 
     dynamodb_client = boto3.client("dynamodb")
-    new_date = warning.warning_datetime.replace(minute=0, second=0, microsecond=0)
+    new_date = warning.warning_datetime.replace(
+        minute=0, second=0, microsecond=0)
     new_date = new_date.replace(tzinfo=timezone.utc)
 
     item = {
         "id": {"S": str(uuid.uuid4())},
+        "user_id": {"S": user_id},
         "parameter": {"S": warning.parameter},
         "email": {"S": warning.email},
         "name": {"S": warning.name},
@@ -40,13 +41,19 @@ def add_warning(warning: WarningModel):
     )
 
 
-def get_warnings():
+def get_warnings(user_id: str):
     """get warnings list"""
 
     dynamodb = boto3.resource("dynamodb")
     table = dynamodb.Table(c.WARNINGS_TABLE)
-    response = table.scan()
-    return response["Items"]
+    resp = table.query(
+        IndexName="user_id-index",
+        KeyConditionExpression="user_id = :user_id",
+        ExpressionAttributeValues={
+            ":user_id": user_id,
+        },
+    )
+    return resp["Items"]
 
 
 def delete_all():
@@ -140,13 +147,15 @@ Result: {condition_result}
 Real value: {value}
     """
 
-    update_warning_field(item_id=warning["id"], field="email_body", value=email_body)
+    update_warning_field(
+        item_id=warning["id"], field="email_body", value=email_body)
 
     sms_sent = send_sms(number=warning["phone_number"], text=email_body)
 
     email_sent = send_email(recipient=warning["email"], body=email_body)
 
-    update_warning_field(item_id=warning["id"], field="sms_sent", value=str(sms_sent))
+    update_warning_field(
+        item_id=warning["id"], field="sms_sent", value=str(sms_sent))
     update_warning_field(
         item_id=warning["id"], field="email_sent", value=str(email_sent)
     )
@@ -202,7 +211,8 @@ def check_warnings():
     )
 
     for warning in warnings:
-        result: dict = check_warning_condition(warning=warning, forcast_data=data)
+        result: dict = check_warning_condition(
+            warning=warning, forcast_data=data)
         notify_warning(
             warning=warning, condition_result=result["result"], value=result["value"]
         )

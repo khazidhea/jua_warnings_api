@@ -20,6 +20,25 @@ class GlobalConfig(BaseSettings):
         "WVKfcSO0DC8n78tJkF3DoBJP2NmPtoD529cciSlj", env="FORFACT_API_KEY"
     )
 
+    check_expiration = True
+    jwt_header_prefix = "Bearer"
+    jwt_header_name = "Authorization"
+    userpools = {
+        "us": {
+            "region": "us-east-1",
+            "userpool_id": "us-east-1_al0VMUMT5",
+            "app_client_id": "6kbd7bg0hs0c5v5uu9nvldqqav",
+        },
+    }
+
+    GOOGLE_CLIENT_ID: str = Field(
+        "1011339696135-4r1ovkcr4iios2pe7jidpmcek6f3m4lf.apps.googleusercontent.com",
+        env="GOOGLE_CLIENT_ID",
+    )
+    GOOGLE_SECRET: str = Field(
+        "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", env="GOOGLE_SECRET"
+    )
+
     @property
     def full_name(self) -> str:
         """return the full name of the stack"""

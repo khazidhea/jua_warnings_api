@@ -18,7 +18,7 @@ def get_parameters(units: UnitSystem):
     url = f"{c.FORFACT_API_URL}v1/forecast/parameters"
     params = {"units": units.value.lower()}
     headers = {"x-api-key": c.FORFACT_API_KEY}
-    response = requests.get(url, params=params, headers=headers)
+    response = requests.get(url, params=params, headers=headers, timeout=60)
     return response.json()
 
 
@@ -60,6 +60,8 @@ def convert_forcast_data(data: dict):
 
 
 def get_forcast_data(parameters, coordinates):
+    """Load forcast data to check alerts:"""
+
     url = f"{c.FORFACT_API_URL}v1/forecast"
     headers = {"x-api-key": c.FORFACT_API_KEY}
     params = {"parameters": parameters, "format": "geojson"}
@@ -69,7 +71,7 @@ def get_forcast_data(parameters, coordinates):
             {"type": "Feature", "geometry": {"type": "Point", "coordinates": coord}}
         )
     response = requests.post(
-        url=url, params=params, data=json.dumps(data), headers=headers
+        url=url, params=params, data=json.dumps(data), headers=headers, timeout=60
     )
     data = response.json()
     return convert_forcast_data(data)

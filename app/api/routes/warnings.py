@@ -1,9 +1,11 @@
 """Warnings API routes"""
 
-from fastapi import Body, Query
+from fastapi import Body, Depends, Query
 from fastapi.routing import APIRouter
+from app.api.auth import CustomTokenModel
 from starlette.status import HTTP_200_OK
 
+from app.api.auth import cognito_us
 from app.services.warnings import forcast_service, warnings_service
 from app.services.warnings.models import UnitSystem, WarningModel
 
@@ -22,9 +24,10 @@ def get_parameters(
         default=UnitSystem.DEFAULT,
         example=UnitSystem.DEFAULT,
     ),
+    auth: CustomTokenModel = Depends(cognito_us.auth_required),
 ) -> dict:
     """Get parameters route"""
-
+    print("test", auth)
     return forcast_service.get_parameters(units)
 
 
@@ -33,9 +36,9 @@ def get_parameters(
     status_code=HTTP_200_OK,
     summary="Get warning list",
 )
-def get_warnings():
+def get_warnings(auth: CustomTokenModel = Depends(cognito_us.auth_required)):
     """Get warnings route"""
-    return warnings_service.get_warnings()
+    return warnings_service.get_warnings(user_id=auth.sub)
 
 
 @router.post(
@@ -43,10 +46,13 @@ def get_warnings():
     status_code=HTTP_200_OK,
     summary="Create warning",
 )
-def add_warning(payload: WarningModel = Body(...)):
+def add_warning(
+    payload: WarningModel = Body(...),
+    auth: CustomTokenModel = Depends(cognito_us.auth_required),
+):
     """Put warning item into dynamodb"""
 
-    warnings_service.add_warning(warning=payload)
+    warnings_service.add_warning(warning=payload, user_id=auth.sub)
 
 
 @router.delete(
