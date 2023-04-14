@@ -32,3 +32,6 @@ class WarningModel(BaseModel):
     value: float
     coordinates: tuple[float, float]
     phone_number: str
+    before_6: bool
+    before_12: bool
+    before_48: bool

@@ -105,6 +105,12 @@ class WarningApiStack(Stack):
             table_name=conf.WARNINGS_TABLE,
         )
 
+        warning_history_table = aws_dynamodb.Table.from_table_name(
+            self,
+            f"{conf.full_name}-warning-history-table",
+            table_name=conf.WARNINGS_HISTORY_TABLE,
+        )
+
         app_root_path = "/" if conf.is_prod or conf.is_stage else "/dev"
         base_lambda = lambda_.DockerImageFunction(
             self,
@@ -134,19 +140,24 @@ class WarningApiStack(Stack):
         base_lambda.add_to_role_policy(ses_publish_policy)
 
         warning_table.grant_read_write_data(base_lambda)
+        warning_history_table.grant_read_write_data(base_lambda)
 
         policy_statement = aws_iam.PolicyStatement(
             effect=aws_iam.Effect.ALLOW,
             actions=["dynamodb:Query"],
             resources=[
-                "arn:aws:dynamodb:us-east-1:323677137491:table/warnings-table/index/warning_datetime-index"
+                "arn:aws:dynamodb:us-east-1:323677137491:table/warnings-table/index/warning_datetime-index",
+                "arn:aws:dynamodb:us-east-1:323677137491:table/warnings-table/index/user_id-index"
+                "arn:aws:dynamodb:us-east-1:323677137491:table/warnings_history/index/user_id-index"
             ],
         )
         base_lambda.add_to_role_policy(policy_statement)
 
         # Access logs, including API key
-        access_log_group = aws_logs.LogGroup(self, f"{conf.full_name}-access-log")
-        access_log_destination = aws_apigateway.LogGroupLogDestination(access_log_group)
+        access_log_group = aws_logs.LogGroup(
+            self, f"{conf.full_name}-access-log")
+        access_log_destination = aws_apigateway.LogGroupLogDestination(
+            access_log_group)
 
         deployment_stage = aws_apigateway.StageOptions(
             stage_name="dev",

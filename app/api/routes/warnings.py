@@ -41,6 +41,16 @@ def get_warnings(auth: CustomTokenModel = Depends(cognito_us.auth_required)):
     return warnings_service.get_warnings(user_id=auth.sub)
 
 
+@router.get(
+    "/history",
+    status_code=HTTP_200_OK,
+    summary="Get warning history list",
+)
+def get_warnings_history(auth: CustomTokenModel = Depends(cognito_us.auth_required)):
+    """Get warnings history route"""
+    return warnings_service.get_warnings_history(user_id=auth.sub)
+
+
 @router.post(
     "",
     status_code=HTTP_200_OK,

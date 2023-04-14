@@ -34,6 +34,9 @@ def add_warning(warning: WarningModel, user_id: str):
         "lat": {"N": str(warning.coordinates[1])},
         "value": {"N": str(warning.value)},
         "phone_number": {"S": str(warning.phone_number)},
+        "before_6": {"S": str(warning.before_6)},
+        "before_12": {"S": str(warning.before_12)},
+        "before_48": {"S": str(warning.before_48)},
     }
     dynamodb_client.put_item(
         TableName=c.WARNINGS_TABLE,
@@ -46,6 +49,21 @@ def get_warnings(user_id: str):
 
     dynamodb = boto3.resource("dynamodb")
     table = dynamodb.Table(c.WARNINGS_TABLE)
+    resp = table.query(
+        IndexName="user_id-index",
+        KeyConditionExpression="user_id = :user_id",
+        ExpressionAttributeValues={
+            ":user_id": user_id,
+        },
+    )
+    return resp["Items"]
+
+
+def get_warnings_history(user_id: str):
+    """get warnings history list"""
+
+    dynamodb = boto3.resource("dynamodb")
+    table = dynamodb.Table(c.WARNINGS_HISTORY_TABLE)
     resp = table.query(
         IndexName="user_id-index",
         KeyConditionExpression="user_id = :user_id",
@@ -83,7 +101,6 @@ def get_before_hours_warnings(hours: list[int]):
     items = []
     for hour in hours:
         before_hour = now + timedelta(hours=hour)
-        print("before_hour", before_hour)
         resp = table.query(
             IndexName="warning_datetime-index",
             KeyConditionExpression="warning_datetime = :date1",
@@ -135,7 +152,33 @@ def send_email(recipient: str, body: str) -> bool:
     return response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
 
-def notify_warning(warning: dict, condition_result: bool, value: float):
+def add_warning_history(warning, sms_sent, email_sent, result):
+    """create warning history"""
+
+    dynamodb_client = boto3.client("dynamodb")
+    now = datetime.now()
+    item = {
+        "id": {"S": str(uuid.uuid4())},
+        "user_id": {"S": warning["user_id"]},
+        "parameter": {"S": warning["parameter"]},
+        "name": {"S": warning["name"]},
+        "location": {"S": warning["location"]},
+        "datetime": {"S": str(now)},
+        "condition": {"S": warning["condition"]},
+        "lon": {"N": str(warning["lon"])},
+        "lat": {"N": str(warning["lat"])},
+        "value": {"N": str(warning["value"])},
+        "result": {"S": str(result)},
+        "sms_sent": {"S": str(sms_sent)},
+        "email_sent": {"S": str(email_sent)},
+    }
+    dynamodb_client.put_item(
+        TableName=c.WARNINGS_HISTORY_TABLE,
+        Item=item,
+    )
+
+
+def notify_warning(warning: dict, condition_result: bool, value: float, sent_key: str):
     """notify users"""
 
     email_body = f"""
@@ -150,15 +193,19 @@ Real value: {value}
     update_warning_field(
         item_id=warning["id"], field="email_body", value=email_body)
 
-    sms_sent = send_sms(number=warning["phone_number"], text=email_body)
+    # sms_sent = send_sms(number=warning["phone_number"], text=email_body)
+    # email_sent = send_email(recipient=warning["email"], body=email_body)
 
-    email_sent = send_email(recipient=warning["email"], body=email_body)
-
-    update_warning_field(
-        item_id=warning["id"], field="sms_sent", value=str(sms_sent))
-    update_warning_field(
-        item_id=warning["id"], field="email_sent", value=str(email_sent)
+    sms_sent = True
+    email_sent = True
+    add_warning_history(
+        warning=warning,
+        sms_sent=sms_sent,
+        email_sent=email_sent,
+        result=condition_result,
     )
+    update_warning_field(
+        item_id=warning["id"], field="sent_key", value=str(sms_sent or email_sent))
 
 
 def check_warning_condition(warning: dict, forcast_data: dict) -> dict:
@@ -193,26 +240,38 @@ def check_warning_condition(warning: dict, forcast_data: dict) -> dict:
 def check_warnings():
     """load warnings to check condition and notify users"""
 
-    warnings = get_before_hours_warnings([48, 12, 6])
-    coordinates = [
-        (float(warning["lon"]), float(warning["lat"])) for warning in warnings
-    ]
-    parameters = [warning["parameter"] for warning in warnings]
+    data = None
+    for before_hour, before_hour_key in [(6, 'before_6'), (12, 'before_12'), (48, 'before_48')]:
+        warnings = get_before_hours_warnings([before_hour])
+        coordinates = [
+            (float(warning["lon"]), float(warning["lat"])) for warning in warnings
+        ]
+        parameters = [warning["parameter"] for warning in warnings]
 
-    coordinates = list(set(coordinates))
-    parameters = list(set(parameters))
+        coordinates = list(set(coordinates))
+        parameters = list(set(parameters))
 
-    if not coordinates:
-        return
+        if not coordinates:
+            continue
 
-    data = get_forcast_data(
-        parameters=parameters,
-        coordinates=coordinates,
-    )
+        if not data:
+            data = get_forcast_data(
+                parameters=parameters,
+                coordinates=coordinates,
+            )
 
-    for warning in warnings:
-        result: dict = check_warning_condition(
-            warning=warning, forcast_data=data)
-        notify_warning(
-            warning=warning, condition_result=result["result"], value=result["value"]
-        )
+        for warning in warnings:
+            if not warning[before_hour_key] == "True":
+                continue
+            sent_key = f"{before_hour_key}_sent"
+            if sent_key in warning and warning[sent_key] == "True":
+                continue
+
+            result: dict = check_warning_condition(
+                warning=warning, forcast_data=data)
+            notify_warning(
+                warning=warning,
+                condition_result=result["result"],
+                value=result["value"],
+                sent_key=sent_key
+            )
