@@ -164,6 +164,7 @@ def add_warning_history(warning, sms_sent, email_sent, result):
         "name": {"S": warning["name"]},
         "location": {"S": warning["location"]},
         "datetime": {"S": str(now)},
+        "warning_datetime": {"S": str(warning["warning_datetime"])},
         "condition": {"S": warning["condition"]},
         "lon": {"N": str(warning["lon"])},
         "lat": {"N": str(warning["lat"])},
@@ -193,11 +194,9 @@ Real value: {value}
     update_warning_field(
         item_id=warning["id"], field="email_body", value=email_body)
 
-    # sms_sent = send_sms(number=warning["phone_number"], text=email_body)
-    # email_sent = send_email(recipient=warning["email"], body=email_body)
+    sms_sent = send_sms(number=warning["phone_number"], text=email_body)
+    email_sent = send_email(recipient=warning["email"], body=email_body)
 
-    sms_sent = True
-    email_sent = True
     add_warning_history(
         warning=warning,
         sms_sent=sms_sent,
@@ -205,7 +204,7 @@ Real value: {value}
         result=condition_result,
     )
     update_warning_field(
-        item_id=warning["id"], field="sent_key", value=str(sms_sent or email_sent))
+        item_id=warning["id"], field=sent_key, value=str(sms_sent or email_sent))
 
 
 def check_warning_condition(warning: dict, forcast_data: dict) -> dict:
@@ -269,6 +268,7 @@ def check_warnings():
 
             result: dict = check_warning_condition(
                 warning=warning, forcast_data=data)
+
             notify_warning(
                 warning=warning,
                 condition_result=result["result"],
