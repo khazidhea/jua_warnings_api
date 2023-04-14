@@ -40,6 +40,9 @@ class GlobalConfig(BaseSettings):
     GOOGLE_SECRET: str = Field(
         "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", env="GOOGLE_SECRET"
     )
+    WARNING_CHECK_URL = Field(
+        "https://8kj2ymc2oh.execute-api.us-east-1.amazonaws.com/dev/v1/warnings/check_warnings",
+        env="WARNING_CHECK_URL")
 
     @property
     def full_name(self) -> str:

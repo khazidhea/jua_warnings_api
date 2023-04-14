@@ -10,6 +10,8 @@ from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_logs
 from aws_cdk import aws_secretsmanager as secrets_manager
 from constructs import Construct
+from aws_cdk import aws_events as events
+from aws_cdk import aws_events_targets as targets
 
 from config import GlobalConfig
 
@@ -148,10 +150,17 @@ class WarningApiStack(Stack):
             resources=[
                 "arn:aws:dynamodb:us-east-1:323677137491:table/warnings-table/index/warning_datetime-index",
                 "arn:aws:dynamodb:us-east-1:323677137491:table/warnings-table/index/user_id-index"
+            ],
+        )
+        policy_statement2 = aws_iam.PolicyStatement(
+            effect=aws_iam.Effect.ALLOW,
+            actions=["dynamodb:Query"],
+            resources=[
                 "arn:aws:dynamodb:us-east-1:323677137491:table/warnings_history/index/user_id-index"
             ],
         )
         base_lambda.add_to_role_policy(policy_statement)
+        base_lambda.add_to_role_policy(policy_statement2)
 
         # Access logs, including API key
         access_log_group = aws_logs.LogGroup(
@@ -199,3 +208,27 @@ class WarningApiStack(Stack):
             any_method=True,
             default_method_options={"api_key_required": False},
         )
+
+        schedule_fn = lambda_.Function(
+            self, f"{conf.full_name}-schedule_check",
+            runtime=lambda_.Runtime.PYTHON_3_8,
+            handler="index.handler",
+            timeout=Duration.minutes(15),
+            code=lambda_.Code.from_inline(
+                f'''
+from urllib.request import urlopen
+
+URL = "{conf.WARNING_CHECK_URL}"
+def handler(event, context):
+    urlopen(URL)
+'''
+            )
+        )
+
+        # Create a rule with a schedule that triggers every 5 minutes
+        rule = events.Rule(
+            self, f"{conf.full_name}-rule",
+            schedule=events.Schedule.rate(Duration.minutes(5)),
+        )
+
+        rule.add_target(targets.LambdaFunction(schedule_fn))
