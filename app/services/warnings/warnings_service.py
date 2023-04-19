@@ -152,7 +152,7 @@ def send_email(recipient: str, body: str) -> bool:
     return response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
 
-def add_warning_history(warning, sms_sent, email_sent, result):
+def add_warning_history(warning, sms_sent, email_sent, result, value):
     """create warning history"""
 
     dynamodb_client = boto3.client("dynamodb")
@@ -169,6 +169,7 @@ def add_warning_history(warning, sms_sent, email_sent, result):
         "lon": {"N": str(warning["lon"])},
         "lat": {"N": str(warning["lat"])},
         "value": {"N": str(warning["value"])},
+        "real_value": {"S": str(value)},
         "result": {"S": str(result)},
         "sms_sent": {"S": str(sms_sent)},
         "email_sent": {"S": str(email_sent)},
@@ -202,6 +203,7 @@ Real value: {value}
         sms_sent=sms_sent,
         email_sent=email_sent,
         result=condition_result,
+        value=value,
     )
     update_warning_field(
         item_id=warning["id"], field=sent_key, value=str(sms_sent or email_sent))
