@@ -17,8 +17,7 @@ def add_warning(warning: WarningModel, user_id: str):
     """create warning item"""
 
     dynamodb_client = boto3.client("dynamodb")
-    new_date = warning.warning_datetime.replace(
-        minute=0, second=0, microsecond=0)
+    new_date = warning.warning_datetime.replace(minute=0, second=0, microsecond=0)
     new_date = new_date.replace(tzinfo=timezone.utc)
 
     item = {
@@ -192,8 +191,7 @@ Result: {condition_result}
 Real value: {value}
     """
 
-    update_warning_field(
-        item_id=warning["id"], field="email_body", value=email_body)
+    update_warning_field(item_id=warning["id"], field="email_body", value=email_body)
 
     sms_sent = send_sms(number=warning["phone_number"], text=email_body)
     email_sent = send_email(recipient=warning["email"], body=email_body)
@@ -206,7 +204,8 @@ Real value: {value}
         value=value,
     )
     update_warning_field(
-        item_id=warning["id"], field=sent_key, value=str(sms_sent or email_sent))
+        item_id=warning["id"], field=sent_key, value=str(sms_sent or email_sent)
+    )
 
 
 def check_warning_condition(warning: dict, forcast_data: dict) -> dict:
@@ -242,7 +241,11 @@ def check_warnings():
     """load warnings to check condition and notify users"""
 
     data = None
-    for before_hour, before_hour_key in [(6, 'before_6'), (12, 'before_12'), (48, 'before_48')]:
+    for before_hour, before_hour_key in [
+        (6, "before_6"),
+        (12, "before_12"),
+        (48, "before_48"),
+    ]:
         warnings = get_before_hours_warnings([before_hour])
         coordinates = [
             (float(warning["lon"]), float(warning["lat"])) for warning in warnings
@@ -268,12 +271,11 @@ def check_warnings():
             if sent_key in warning and warning[sent_key] == "True":
                 continue
 
-            result: dict = check_warning_condition(
-                warning=warning, forcast_data=data)
+            result: dict = check_warning_condition(warning=warning, forcast_data=data)
 
             notify_warning(
                 warning=warning,
                 condition_result=result["result"],
                 value=result["value"],
-                sent_key=sent_key
+                sent_key=sent_key,
             )

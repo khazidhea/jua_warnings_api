@@ -98,5 +98,6 @@ exclude = [
 module = [
     "metpy.*",
     "pandas",
+    "fastapi_cognito",
 ]
 ignore_missing_imports = true

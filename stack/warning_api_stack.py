@@ -5,13 +5,13 @@ import pathlib
 
 from aws_cdk import Duration, Stack, aws_apigateway
 from aws_cdk import aws_cognito as cognito
-from aws_cdk import aws_dynamodb, aws_iam
-from aws_cdk import aws_lambda as lambda_
-from aws_cdk import aws_logs
-from aws_cdk import aws_secretsmanager as secrets_manager
-from constructs import Construct
+from aws_cdk import aws_dynamodb
 from aws_cdk import aws_events as events
 from aws_cdk import aws_events_targets as targets
+from aws_cdk import aws_iam
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_logs
+from constructs import Construct
 
 from config import GlobalConfig
 
@@ -149,7 +149,7 @@ class WarningApiStack(Stack):
             actions=["dynamodb:Query"],
             resources=[
                 "arn:aws:dynamodb:us-east-1:323677137491:table/warnings-table/index/warning_datetime-index",
-                "arn:aws:dynamodb:us-east-1:323677137491:table/warnings-table/index/user_id-index"
+                "arn:aws:dynamodb:us-east-1:323677137491:table/warnings-table/index/user_id-index",
             ],
         )
         policy_statement2 = aws_iam.PolicyStatement(
@@ -163,10 +163,8 @@ class WarningApiStack(Stack):
         base_lambda.add_to_role_policy(policy_statement2)
 
         # Access logs, including API key
-        access_log_group = aws_logs.LogGroup(
-            self, f"{conf.full_name}-access-log")
-        access_log_destination = aws_apigateway.LogGroupLogDestination(
-            access_log_group)
+        access_log_group = aws_logs.LogGroup(self, f"{conf.full_name}-access-log")
+        access_log_destination = aws_apigateway.LogGroupLogDestination(access_log_group)
 
         deployment_stage = aws_apigateway.StageOptions(
             stage_name="dev",
@@ -210,24 +208,26 @@ class WarningApiStack(Stack):
         )
 
         schedule_fn = lambda_.Function(
-            self, f"{conf.full_name}-schedule_check",
+            self,
+            f"{conf.full_name}-schedule_check",
             runtime=lambda_.Runtime.PYTHON_3_8,
             handler="index.handler",
             timeout=Duration.minutes(15),
             code=lambda_.Code.from_inline(
-                f'''
+                f"""
 from urllib.request import urlopen
 
 URL = "{conf.WARNING_CHECK_URL}"
 def handler(event, context):
     urlopen(URL)
-'''
-            )
+"""
+            ),
         )
 
         # Create a rule with a schedule that triggers every 5 minutes
         rule = events.Rule(
-            self, f"{conf.full_name}-rule",
+            self,
+            f"{conf.full_name}-rule",
             schedule=events.Schedule.rate(Duration.minutes(5)),
         )
 

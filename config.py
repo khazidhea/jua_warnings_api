@@ -16,7 +16,8 @@ class GlobalConfig(BaseSettings):
 
     WARNINGS_TABLE: str = Field("warnings-table", env="WARNINGS_TABLE")
     WARNINGS_HISTORY_TABLE: str = Field(
-        "warnings_history", env="WARNINGS_HISTORY_TABLE")
+        "warnings_history", env="WARNINGS_HISTORY_TABLE"
+    )
     FORFACT_API_URL: str = Field("https://api.jua.ai/", env="FORFACT_API_URL")
     FORFACT_API_KEY: str = Field(
         "WVKfcSO0DC8n78tJkF3DoBJP2NmPtoD529cciSlj", env="FORFACT_API_KEY"
@@ -42,7 +43,8 @@ class GlobalConfig(BaseSettings):
     )
     WARNING_CHECK_URL = Field(
         "https://8kj2ymc2oh.execute-api.us-east-1.amazonaws.com/dev/v1/warnings/check_warnings",
-        env="WARNING_CHECK_URL")
+        env="WARNING_CHECK_URL",
+    )
 
     @property
     def full_name(self) -> str:

@@ -2,10 +2,9 @@
 
 from fastapi import Body, Depends, Query
 from fastapi.routing import APIRouter
-from app.api.auth import CustomTokenModel
 from starlette.status import HTTP_200_OK
 
-from app.api.auth import cognito_us
+from app.api.auth import CustomTokenModel, cognito_us
 from app.services.warnings import forcast_service, warnings_service
 from app.services.warnings.models import UnitSystem, WarningModel
 
